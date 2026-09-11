@@ -451,6 +451,6 @@ function loadP(idx){
 }
 updCoin();loadP(0);
 $('home').onclick=function(){location.href='index.html'};
-</script>
+setInterval(function(){var ph=document.querySelector('.hs[data-id="pulse"]');if(ph&&ph.dataset.fx!=='1'){ph.dataset.fx='1';ph.onclick=function(){onPulse();};}},400);</script>
 </body>
 </html>

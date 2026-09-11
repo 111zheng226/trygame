@@ -395,10 +395,10 @@ function onPulse(){
   sfx.correct();pulseTxt=curP.pulse.text;renderCase();
   showBub('脉象：'+pulseTxt);
   var e=sceneEl.querySelector('.hs[data-id="pulse"]');if(e)e.style.display='none';
-  later(function(){
+  
     actsEl.innerHTML='<div class="tip">四诊已毕，请判断病人的方证。</div><button class="btn" id="bDi">开始辨证</button>';
     $('bDi').onclick=function(){sfx.click();setState(ST.DIAG)};
-  },1800);
+  
 }
 function rDiag(){
   hideBub();

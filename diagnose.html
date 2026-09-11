@@ -321,7 +321,7 @@ function renderScene(o){
   sceneEl.innerHTML=buildScene(o.p,o.pulse,o.hs,o.ac);
   var hs=sceneEl.querySelectorAll('.hs');
   for(var i=0;i<hs.length;i++)(function(el){el.addEventListener('click',function(){onHsClick(el)})})(hs[i]);
-  if(o.pulse){var ph=sceneEl.querySelector('.hs[data-id="pulse"]');if(ph)ph.addEventListener('click',onPulse)}
+  if(o.pulse){var ph=sceneEl.querySelector('.hs[data-id="pulse"]');if(ph)ph.onclick=onPulse;}
 }
 function setState(s){state=s;render()}
 function render(){

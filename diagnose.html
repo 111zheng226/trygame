@@ -6,95 +6,6 @@
 <title>行医 · 问诊</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:sans-serif;background:#f5f0e8;height:100vh;display:flex;justify-content:center;overflow:hidden}
-#app{width:100%;max-width:440px;display:flex;flex-direction:column;height:100%}
-#top{background:#6d4c2a;color:#fff;padding:10px;display:flex;justify-content:space-between;font-weight:bold;font-size:14px}
-#stage{flex:1;position:relative;background:#e8d5b0;padding:10px}
-#patient{font-size:80px;text-align:center;margin:10px 0;line-height:1}
-#bubble{background:#fffdf5;border:2px solid #6d4c2a;border-radius:12px;padding:10px;font-size:14px;color:#3a2a1a;text-align:center;min-height:50px;display:flex;align-items:center;justify-content:center;font-weight:bold}
-#parts{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:12px}
-.part{font-size:36px;cursor:pointer;padding:8px;border:2px solid transparent;border-radius:10px;position:relative}
-.part:hover{border-color:#6d4c2a}
-.part.ok{border-color:#33691e;background:#c5e1a5}
-.part.no{border-color:#c62828;background:#ffcdd2}
-#case{background:#fffaf0;border-top:3px solid #6d4c2a;padding:8px;font-size:12px;color:#5a4a30;max-height:80px;overflow-y:auto}
-#acts{padding:10px;background:#f0e6d0;display:flex;flex-direction:column;gap:8px}
-.btn{width:100%;font-size:15px;font-weight:bold;padding:11px;border:2px solid #6d4c2a;border-radius:12px;background:#d4a574;color:#3a2a1a;cursor:pointer}
-.btn:active{transform:scale(.98)}
-#mo{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;padding:20px;z-index:9}
-#mo.on{display:flex}
-.mbox{background:#fff;border-radius:16px;padding:20px;text-align:center;max-width:300px;width:100%}
-.mbox h3{color:#6d4c2a;margin-bottom:10px}
-.mbox p{font-size:14px;color:#5a4a30;margin-bottom:16px;white-space:pre-line;line-height:1.5}
-</style>
-</head>
-<body>
-<div id="app">
-<div id="top"><span id="prog">病人 1 / 5</span><span id="coin">💰 0</span></div>
-<div id="stage">
-<div id="patient">🧑‍🦱</div>
-<div id="bubble">点击"开始望诊"</div>
-<div id="parts"></div>
-</div>
-<div id="case"><b>📋 病历</b><div id="caseContent">尚未开始诊治</div></div>
-<div id="acts"></div>
-</div>
-<div id="mo"><div class="mbox"><h3 id="mT"></h3><p id="mX"></p><button class="btn" id="mB">继续</button></div></div>
-<script>
-var PATIENTS=[
-{n:'张氏',face:'🧑‍🦱',parts:[{e:'🧠',k:'头',ok:0},{e:'🤚',k:'脖子',ok:1,msg:'右手扶脖颈'},{e:'👕',k:'胸',ok:0},{e:'👖',k:'腿',ok:0}],
- syms:['我怕冷，加了衣服还是冷','身上发热，一直在出汗','风吹过来特别怕风','脖子和后脑勺僵硬疼痛'],
- pulse:'脉浮而缓，轻取即得',opts:['太阳中风','太阳伤寒','少阳病'],ans:'太阳中风',formula:'桂枝汤'},
-{n:'李氏',face:'🧔',parts:[{e:'🧠',k:'头',ok:0},{e:'🫂',k:'抱臂',ok:1,msg:'抱臂蜷缩、无汗'},{e:'👖',k:'腿',ok:0},{e:'🦶',k:'脚',ok:0}],
- syms:['冷得厉害，盖被子还是冷','身上发烫，一点汗都没有','全身骨节疼痛，腰痛','有点喘不上气'],
- pulse:'脉浮而紧，搏指有力',opts:['太阳中风','太阳伤寒','阳明经证'],ans:'太阳伤寒',formula:'麻黄汤'},
-{n:'王氏',face:'👩',parts:[{e:'🧠',k:'头',ok:0},{e:'🤚',k:'胁肋',ok:1,msg:'手捂胁肋'},{e:'👖',k:'腿',ok:0},{e:'🦶',k:'脚',ok:0}],
- syms:['一阵冷一阵热','胸口和胁肋又胀又满','不想吃东西，心烦想吐','嘴苦咽干'],
- pulse:'脉弦，端直以长',opts:['少阳病','太阳中风','太阴病'],ans:'少阳病',formula:'小柴胡汤'},
-{n:'赵氏',face:'😤',parts:[{e:'😡',k:'面红',ok:1,msg:'面红目赤大汗'},{e:'👕',k:'胸',ok:0},{e:'👖',k:'腿',ok:0},{e:'🦶',k:'脚',ok:0}],
- syms:['热得受不了，像火烧','汗出如水，止不住','口渴想喝凉水','心里烦躁'],
- pulse:'脉洪大而数',opts:['阳明经证','太阳中风','少阳病'],ans:'阳明经证',formula:'白虎汤'},
-{n:'孙氏',face:'👴',parts:[{e:'🧠',k:'头',ok:0},{e:'🤲',k:'肚子',ok:1,msg:'双手捂肚子'},{e:'👖',k:'腿',ok:0},{e:'🦶',k:'脚',ok:0}],
- syms:['肚子胀得难受，想吐','吃不下东西','拉肚子','肚子隐隐作痛'],
- pulse:'脉缓而弱',opts:['太阴病','阳明经证','少阳病'],ans:'太阴病',formula:'理中汤'}
-];
-var idx=0,cur=null,state=0,wrongObs=0,wrongDiag=0,syms=[],pulseTxt='';
-function $(i){return document.getElementById(i)}
-function getCoin(){var v=localStorage.getItem('bc_coins');return v?parseInt(v):0}
-function setCoin(n){localStorage.setItem('bc_coins',n)}
-function updCoin(){$('coin').textContent='💰 '+getCoin()}
-function updProg(){$('prog').textContent='病人 '+(idx+1)+' / 5'}
-function showBub(t){$('bubble').textContent=t}
-function showMo(t,x,cb){$('mT').textContent=t;$('mX').textContent=x;$('mo').classList.add('on');$('mB').onclick=function(){$('mo').classList.remove('on');if(cb)cb()}}
-function updCase(){
- if(!syms.length&&!pulseTxt){$('caseContent').textContent='尚未开始诊治';return}
- var h='';
- if(syms.length)h+='<div><b>症状：</b>'+syms.join('、')+'</div>';
- if(pulseTxt)h+='<div><b>脉象：</b>'+pulseTxt+'</div>';
- $('caseContent').innerHTML=h;
-}
-function loadP(i){
- cur=PATIENTS[i];wrongObs=0;wrongDiag=0;syms=[];pulseTxt='';
- updProg();updCase();updCoin();
- $('patient').textContent=cur.face;
- showBub(cur.n+' 走进来，请先望诊');
- $('acts').innerHTML='<button class="btn" id="b1">开始望诊</button>';
- $('b1').onclick=doObserve;
- $('parts').innerHTML='';
-}
-function doObserve(){
- wrongObs=0;
- showBub('【望诊】点击病人异常的部位');
- $('parts').innerHTML='';
- for(var i=0;i<cur.parts.length;i++){
-  var p<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-<title>行医 · 问诊</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
 html,body{height:100%;overflow:hidden}
 body{font-family:-apple-system,"PingFang SC",sans-serif;background:#2a1a0a;display:flex;justify-content:center;user-select:none}
 #app{width:100%;max-width:440px;height:100%;display:flex;flex-direction:column;background:#f5f0e8}
@@ -155,7 +66,8 @@ body{font-family:-apple-system,"PingFang SC",sans-serif;background:#2a1a0a;displ
 <div id="acts"></div>
 </div>
 <div id="mo"><div class="mbox"><h3 id="mT"></h3><p id="mX"></p><button id="mB"></button></div></div>
-<script>function getCoins(){var v=localStorage.getItem('bc_coins');return v===null?0:parseInt(v,10)||0}
+<script>
+function getCoins(){var v=localStorage.getItem('bc_coins');return v===null?0:parseInt(v,10)||0}
 function setCoins(n){localStorage.setItem('bc_coins',Math.max(0,n))}
 var AC=null;
 function beep(f,d,t,v){try{if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)();var o=AC.createOscillator(),g=AC.createGain();o.type=t||'sine';o.frequency.value=f;o.connect(g);g.connect(AC.destination);g.gain.setValueAtTime(v||.12,AC.currentTime);g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+(d||.12));o.start();o.stop(AC.currentTime+(d||.12))}catch(e){}}
@@ -200,7 +112,8 @@ return '<path d="M360 480 Q312 458 278 420 L292 384 Q328 408 360 420 Z" fill="#f
 '<ellipse cx="270" cy="325" rx="6" ry="15" fill="#f6d5b4" stroke="#b88a60" transform="rotate(-14 270 325)"/>'+
 '<ellipse cx="282" cy="328" rx="6" ry="15" fill="#f6d5b4" stroke="#b88a60" transform="rotate(-14 282 328)"/>'+
 '<ellipse cx="292" cy="362" rx="12" ry="7" fill="#f6d5b4" stroke="#b88a60"/>';
-}function drawHead(p,e){
+}
+function drawHead(p,e){
 var L=p.look,s='';
 s+='<ellipse cx="116" cy="152" rx="11" ry="16" fill="'+L.skin+'" stroke="'+L.shade+'"/>';
 s+='<ellipse cx="244" cy="152" rx="11" ry="16" fill="'+L.skin+'" stroke="'+L.shade+'"/>';
@@ -239,7 +152,8 @@ else if(e.mouth==='open'){s+='<ellipse cx="180" cy="198" rx="9" ry="7" fill="#5a
 else if(e.mouth==='sigh'){s+='<path d="M164 198 Q180 208 196 198" stroke="#8b3a3a" stroke-width="2.8" fill="none" stroke-linecap="round"/>'}
 else{s+='<path d="M164 198 Q180 204 196 198" stroke="#8b3a3a" stroke-width="2.8" fill="none" stroke-linecap="round"/>'}
 if(L.beard==='short'){s+='<path d="M154 216 Q180 242 206 216 Q204 234 180 236 Q156 234 154 216 Z" fill="'+L.hair+'" opacity=".75"/>'}
-else if(L.beard==='white'){s+='<path d="M150 214 Q180 256 210 214 Q216 256 180 272 Q144 256 150 214 Z" fill="#ececea" stroke="#a8a8a0"/>'}if(L.sweat){s+='<ellipse cx="128" cy="108" rx="3.6" ry="5.4" fill="#7ec8e3" opacity=".9"/><ellipse cx="234" cy="120" rx="3" ry="4.6" fill="#7ec8e3" opacity=".9"/>'}
+else if(L.beard==='white'){s+='<path d="M150 214 Q180 256 210 214 Q216 256 180 272 Q144 256 150 214 Z" fill="#ececea" stroke="#a8a8a0"/>'}
+if(L.sweat){s+='<ellipse cx="128" cy="108" rx="3.6" ry="5.4" fill="#7ec8e3" opacity=".9"/><ellipse cx="234" cy="120" rx="3" ry="4.6" fill="#7ec8e3" opacity=".9"/>'}
 if(L.wrinkles){s+='<path d="M142 122 Q180 114 218 122" stroke="'+D+'" stroke-width="1.2" fill="none" opacity=".4"/>'}
 return s;
 }
@@ -277,7 +191,8 @@ s+='<ellipse cx="156" cy="324" rx="15" ry="13" fill="'+L.skin+'" stroke="'+L.sha
 s+='<ellipse cx="204" cy="324" rx="15" ry="13" fill="'+L.skin+'" stroke="'+L.shade+'"/>';
 }
 return s;
-}function drawArmPulse(L){
+}
+function drawArmPulse(L){
 return '<path d="M100 234 Q88 300 96 380" stroke="'+L.robe+'" stroke-width="28" fill="none" stroke-linecap="round"/>'+
 '<path d="M260 234 Q300 272 296 330 Q292 358 268 372" stroke="'+L.robe+'" stroke-width="28" fill="none" stroke-linecap="round"/>'+
 '<path d="M292 336 L268 348 Q256 362 258 380 L286 370 Q296 356 292 336 Z" fill="'+L.robeD+'" opacity=".65"/>'+
@@ -360,7 +275,8 @@ hotspots:[
 {id:'belly',cx:180,cy:360,r:40,msg:'腹部无异常。'},
 {id:'legs',cx:180,cy:420,r:30,msg:'双腿无异常。'}],
 correctMsg:'你注意到他面红目赤，大汗淋漓，烦躁不安。'},
-inquiry:{symptoms:['热！热得受不了，像火烧一样。','汗出得像水一样，止都止不住。','口渴得要命，特别想喝凉水。','心里烦躁，坐立不安。pulse:{text:'脉洪大而数，来势汹涌，如波涛拍岸。'},
+inquiry:{symptoms:['热！热得受不了，像火烧一样。','汗出得像水一样，止都止不住。','口渴得要命，特别想喝凉水。','心里烦躁，坐立不安。'],doneMsg:'（病人不停擦汗，扇风）'},
+pulse:{text:'脉洪大而数，来势汹涌，如波涛拍岸。'},
 diagnose:{options:['阳明经证','太阳中风','少阳病'],answer:'阳明经证',formula:'白虎汤',desc:'清热生津，除烦止渴'}},
 {name:'孙氏',intro:'一位老人双手捂着肚子，面色萎黄地走进来……',pose:'belly',
 expression:{brow:'sad',eye:'tired',mouth:'pain'},
@@ -375,7 +291,8 @@ correctMsg:'你注意到他双手捂着肚子，面色萎黄无华。'},
 inquiry:{symptoms:['肚子胀得难受，还老想吐。','吃不下东西，一吃就胀。','拉肚子，越拉越厉害。','肚子时不时地疼，喜欢用手按着。'],doneMsg:'（病人捂着肚子，面露痛苦）'},
 pulse:{text:'脉缓而弱，沉取无力。'},
 diagnose:{options:['太阴病','阳明经证','少阳病'],answer:'太阴病',formula:'理中汤',desc:'温中散寒，健脾止泻'}}
-];var ST={INTRO:0,OBSERVE:1,INQUIRY:2,PULSE:3,DIAG:4};
+]
+var ST={INTRO:0,OBSERVE:1,INQUIRY:2,PULSE:3,DIAG:4};
 var curIdx=0,curP=null,state=ST.INTRO,wrongCount=0,obsWrong=0,syms=[],pulseTxt='';
 var timers=[];
 function $(id){return document.getElementById(id)}
@@ -470,7 +387,9 @@ $('bPul').onclick=function(){sfx.click();setState(ST.PULSE)};
 function rPulse(){
 hideBub();
 renderScene({p:curP,pulse:true,ac:'breathe',hs:[{id:'pulse',cx:256,cy:382,r:28,correct:true}]});
-actsEl.innerHTML='<div class="tip">🩺 伸出右手，点击病人手腕为其把脉</div>';function onPulse(){
+actsEl.innerHTML='<div class="tip">🩺 伸出右手，点击病人手腕为其把脉</div>';
+}
+function onPulse(){
 sfx.correct();pulseTxt=curP.pulse.text;renderCase();
 showBub('脉象：'+pulseTxt);
 var e=sceneEl.querySelector('.hs[data-id="pulse"]');if(e)e.style.display='none';

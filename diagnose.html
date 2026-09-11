@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>行医 · 问诊</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden}
+body{font-family:-apple-system,"PingFang SC",sans-serif;background:#2a1a0a;display:flex;justify-content:center;user-select:none}
+#app{width:100%;max-width:440px;height:100%;display:flex;flex-direction:column;background:#f5f0e8}
+#top{height:46px;display:flex;align-items:center;padding:0 12px;gap:10px;background:linear-gradient(180deg,#6d4c2a,#4a2f1a);color:#fff;flex-shrink:0}
+#home{background:rgba(255,255,255,.15);border:none;color:#fff;font-size:18px;width:34px;height:34px;border-radius:8px;cursor:pointer}
+#prog{flex:1;text-align:center;font-size:14px;font-weight:bold;letter-spacing:1px}
+#coin{font-size:13px;font-weight:bold;background:rgba(255,215,0,.2);color:#ffd700;border:1px solid rgba(255,215,0,.5);padding:4px 10px;border-radius:12px}
+#stage{flex:1;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;background:#3a2a1a}
+#scene{width:100%;height:100%}
+#scene svg{width:100%;height:100%;display:block}
+@keyframes shiver{0%,100%{transform:translateX(0)}25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
+@keyframes breathe{0%,100%{transform:translateY(0)}50%{transform:translateY(-2.5px)}}
+.shiver{animation:shiver .3s infinite}
+.breathe{animation:breathe 3s ease-in-out infinite}
+.pg{transform-origin:180px 340px}
+.hs{cursor:pointer}
+.hs .rg{transform-box:fill-box;transform-origin:center;animation:pr 1.4s infinite ease-out}
+@keyframes pr{0%{transform:scale(.7);opacity:.85}100%{transform:scale(1.55);opacity:0}}
+.hs .dt{animation:db 1.4s infinite ease-in-out}
+@keyframes db{0%,100%{opacity:.5}50%{opacity:1}}
+#bub{position:absolute;top:14px;left:50%;transform:translateX(-50%) scale(.9);background:#fffdf5;border:2px solid #6d4c2a;border-radius:14px;padding:10px 16px;font-size:14px;color:#3a2a1a;font-weight:bold;max-width:82%;line-height:1.4;box-shadow:0 6px 16px rgba(0,0,0,.3);opacity:0;transition:.25s;z-index:3;text-align:center}
+#bub::after{content:'';position:absolute;bottom:-10px;left:50%;transform:translateX(-50%);border:8px solid transparent;border-top-color:#6d4c2a}
+#bub.on{opacity:1;transform:translateX(-50%) scale(1)}
+#case{background:#fffaf0;border-top:3px solid #6d4c2a;padding:8px 14px;min-height:60px;max-height:96px;overflow-y:auto;font-size:12px;color:#5a4a30;flex-shrink:0}
+#case b{color:#6d4c2a}
+#caseContent{line-height:1.6;margin-top:4px}
+#caseContent .s{color:#b34100;font-weight:bold}
+#caseContent .p{color:#1565c0;font-weight:bold}
+#acts{padding:10px 14px 16px;background:#f0e6d0;border-top:2px solid #d4c4a8;flex-shrink:0;min-height:76px;display:flex;flex-direction:column;gap:8px}
+.tip{font-size:13px;color:#6b5a3a;text-align:center;font-weight:bold;line-height:1.4}
+.btn{display:block;width:100%;font-size:15px;font-weight:bold;padding:11px;border:2px solid #6d4c2a;border-radius:12px;background:linear-gradient(180deg,#d4a574,#b8845a);color:#3a2a1a;cursor:pointer;box-shadow:0 3px 0 #6d4c2a}
+.btn:active{transform:translateY(2px);box-shadow:0 1px 0 #6d4c2a}
+.opt{display:block;width:100%;text-align:left;font-size:15px;font-weight:bold;padding:12px 16px;margin-bottom:6px;border:2px solid #8b7355;border-radius:12px;background:#fffdf5;color:#4a3a20;cursor:pointer}
+.opt:active{transform:scale(.98);background:#f0e6d0}
+.opt.ok{background:#c5e1a5;border-color:#33691e;color:#1a3a00}
+.opt.no{background:#ffcdd2;border-color:#c62828;color:#7a1010}
+.opt:disabled{cursor:default}
+#mo{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;z-index:999;padding:20px}
+#mo.on{display:flex}
+.mbox{background:#f5f0e8;border-radius:20px;padding:26px 30px;text-align:center;width:100%;max-width:320px;border:3px solid #6d4c2a}
+.mbox h3{font-size:20px;color:#6d4c2a;margin-bottom:10px}
+.mbox p{font-size:14px;color:#5a4a30;margin-bottom:20px;line-height:1.5;white-space:pre-line}
+.mbox button{display:block;width:100%;font-size:16px;font-weight:bold;padding:12px;border:2px solid #6d4c2a;border-radius:12px;background:linear-gradient(180deg,#d4a574,#b8845a);color:#3a2a1a;cursor:pointer;box-shadow:0 3px 0 #6d4c2a}
+</style>
+</head>
+<body>
+<div id="app">
+  <header id="top">
+    <button id="home">←</button>
+    <span id="prog">病人 1 / 5</span>
+    <span id="coin">💰 0</span>
+  </header>
+  <div id="stage">
+    <div id="scene"></div>
+    <div id="bub"></div>
+  </div>
+  <div id="case"><b>📋 病历</b><div id="caseContent">尚未开始诊治</div></div>
+  <div id="acts"></div>
+</div>
+<div id="mo"><div class="mbox"><h3 id="mT"></h3><p id="mX"></p><button id="mB"></button></div></div>
+<script>
+function getCoins(){var v=localStorage.getItem('bc_coins');return v===null?0:parseInt(v,10)||0}
+function setCoins(n){localStorage.setItem('bc_coins',Math.max(0,n))}
+var AC=null;
+function beep(f,d,t,v){try{if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)();var o=AC.createOscillator(),g=AC.createGain();o.type=t||'sine';o.frequency.value=f;o.connect(g);g.connect(AC.destination);g.gain.setValueAtTime(v||.12,AC.currentTime);g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+(d||.12));o.start();o.stop(AC.currentTime+(d||.12))}catch(e){}}
+var sfx={
+  click:function(){beep(520,.06)},
+  correct:function(){beep(660,.1);setTimeout(function(){beep(880,.14)},90)},
+  wrong:function(){beep(180,.14,'square');setTimeout(function(){beep(140,.2,'square')},110)},
+  win:function(){beep(523,.1);setTimeout(function(){beep(659,.1)},100);setTimeout(function(){beep(784,.2)},200)},
+  lose:function(){beep(300,.2,'sawtooth');setTimeout(function(){beep(200,.3,'sawtooth')},180)}
+};
+function drawRoom(){
+  var s='<rect width="360" height="500" fill="#dcc598"/>';
+  s+='<rect x="4" y="58" width="352" height="288" rx="6" fill="#3a1e0a"/>';
+  for(var r=0;r<4;r++)for(var c=0;c<6;c++){
+    var x=12+c*56,y=66+r*68;
+    s+='<rect x="'+(x+3)+'" y="'+(y+3)+'" width="50" height="62" rx="2" fill="#6a3a18"/>';
+    s+='<rect x="'+(x+10)+'" y="'+(y+12)+'" width="36" height="44" rx="2" fill="#8a4a22"/>';
+    s+='<circle cx="'+(x+28)+'" cy="'+(y+34)+'" r="4" fill="#c9a05a"/>';
+    s+='<circle cx="'+(x+28)+'" cy="'+(y+34)+'" r="1.5" fill="#5a3a10"/>';
+  }
+  s+='<rect x="108" y="14" width="144" height="42" rx="4" fill="#3a1a08" stroke="#1a0a00" stroke-width="2"/>';
+  s+='<rect x="112" y="18" width="136" height="34" rx="3" fill="#5a2a10" stroke="#c9a05a" stroke-width="1.5"/>';
+  s+='<text x="180" y="42" text-anchor="middle" font-size="20" font-family="KaiTi,STKaiti,serif" fill="#e8c880" letter-spacing="2">妙手回春</text>';
+  return s;
+}
+function drawTable(){
+  return '<rect x="0" y="380" width="360" height="120" fill="#7a3e18"/>'+
+    '<rect x="0" y="380" width="360" height="120" fill="url(#ts)"/>'+
+    '<rect x="0" y="376" width="360" height="8" rx="2" fill="#b87848"/>'+
+    '<rect x="180" y="374" width="130" height="38" rx="16" fill="#a02828" stroke="#4a0808"/>'+
+    '<rect x="180" y="374" width="130" height="14" rx="7" fill="#d04040"/>'+
+    '<ellipse cx="62" cy="376" rx="30" ry="26" fill="#b8a888" stroke="#5a4a30"/>'+
+    '<ellipse cx="62" cy="366" rx="22" ry="8" fill="#d8c8a8"/>'+
+    '<circle cx="62" cy="352" r="6" fill="#b8a888" stroke="#5a4a30"/>'+
+    '<path d="M88 366 Q104 362 102 376 Q100 388 92 390" stroke="#5a4a30" stroke-width="3" fill="none"/>'+
+    '<path d="M40 376 Q24 372 22 384" stroke="#5a4a30" stroke-width="3" fill="none"/>';
+}
+function drawHand(){
+  return '<path d="M360 480 Q312 458 278 420 L292 384 Q328 408 360 420 Z" fill="#f5ecd6" stroke="#b0a080" stroke-width="2"/>'+
+    '<ellipse cx="270" cy="360" rx="22" ry="18" fill="#f6d5b4" stroke="#b88a60" stroke-width="2"/>'+
+    '<ellipse cx="258" cy="330" rx="6" ry="15" fill="#f6d5b4" stroke="#b88a60" transform="rotate(-14 258 330)"/>'+
+    '<ellipse cx="270" cy="325" rx="6" ry="15" fill="#f6d5b4" stroke="#b88a60" transform="rotate(-14 270 325)"/>'+
+    '<ellipse cx="282" cy="328" rx="6" ry="15" fill="#f6d5b4" stroke="#b88a60" transform="rotate(-14 282 328)"/>'+
+    '<ellipse cx="292" cy="362" rx="12" ry="7" fill="#f6d5b4" stroke="#b88a60"/>';
+}
+function drawHead(p,e){
+  var L=p.look,s='';
+  s+='<ellipse cx="116" cy="152" rx="11" ry="16" fill="'+L.skin+'" stroke="'+L.shade+'"/>';
+  s+='<ellipse cx="244" cy="152" rx="11" ry="16" fill="'+L.skin+'" stroke="'+L.shade+'"/>';
+  s+='<ellipse cx="180" cy="146" rx="66" ry="72" fill="'+L.skin+'"/>';
+  if(L.hairStyle==='bun'){
+    s+='<path d="M118 128 Q120 78 180 76 Q240 78 242 128 Q234 100 180 98 Q126 100 118 128 Z" fill="'+L.hair+'"/>';
+    s+='<ellipse cx="180" cy="66" rx="26" ry="18" fill="'+L.hair+'" stroke="'+L.hairD+'"/>';
+    s+='<path d="M150 68 Q180 62 210 68" stroke="#8b2a2a" stroke-width="3.5" fill="none"/>';
+  }else if(L.hairStyle==='topknot'){
+    s+='<path d="M118 128 Q120 78 180 76 Q240 78 242 128 Q234 100 180 98 Q126 100 118 128 Z" fill="'+L.hair+'"/>';
+    s+='<circle cx="180" cy="62" r="17" fill="'+L.hair+'" stroke="'+L.hairD+'"/>';
+  }else if(L.hairStyle==='old'){
+    s+='<path d="M116 128 Q118 74 180 72 Q242 74 244 128 Q234 98 180 96 Q126 98 116 128 Z" fill="'+L.hair+'"/>';
+    s+='<ellipse cx="180" cy="60" rx="24" ry="17" fill="'+L.hair+'" stroke="'+L.hairD+'"/>';
+  }else if(L.hairStyle==='long'){
+    s+='<path d="M112 128 Q112 66 180 64 Q248 66 248 128 Q254 200 244 250 L248 270 L212 270 L212 200 Q214 118 180 116 Q146 118 148 200 L148 270 L112 270 L116 250 Q106 200 112 128 Z" fill="'+L.hair+'"/>';
+    s+='<ellipse cx="180" cy="54" rx="30" ry="20" fill="'+L.hair+'" stroke="'+L.hairD+'"/>';
+    s+='<line x1="156" y1="54" x2="206" y2="46" stroke="#d4af37" stroke-width="3"/>';
+  }else if(L.hairStyle==='towel'){
+    s+='<path d="M114 124 Q120 74 180 72 Q240 74 246 124 Q246 134 240 142 Q232 116 180 114 Q128 116 120 142 Q114 134 114 124 Z" fill="#4a6a8a"/>';
+  }
+  if(L.blush){s+='<ellipse cx="138" cy="172" rx="14" ry="8" fill="#e88a8a" opacity=".42"/>';s+='<ellipse cx="222" cy="172" rx="14" ry="8" fill="#e88a8a" opacity=".42"/>'}
+  if(L.redFace){s+='<ellipse cx="138" cy="172" rx="20" ry="13" fill="#e06060" opacity=".48"/>';s+='<ellipse cx="222" cy="172" rx="20" ry="13" fill="#e06060" opacity=".48"/>'}
+  var D='#3a2a1a';
+  if(e.brow==='worried'){s+='<path d="M138 124 Q152 116 166 124" stroke="'+D+'" stroke-width="3.6" fill="none" stroke-linecap="round"/><path d="M194 124 Q208 116 222 124" stroke="'+D+'" stroke-width="3.6" fill="none" stroke-linecap="round"/>'}
+  else if(e.brow==='angry'){s+='<path d="M138 126 L168 118" stroke="'+D+'" stroke-width="4" stroke-linecap="round"/><path d="M192 118 L222 126" stroke="'+D+'" stroke-width="4" stroke-linecap="round"/>'}
+  else if(e.brow==='sad'){s+='<path d="M138 120 Q152 126 166 128" stroke="'+D+'" stroke-width="3.2" fill="none" stroke-linecap="round"/><path d="M194 128 Q208 126 222 120" stroke="'+D+'" stroke-width="3.2" fill="none" stroke-linecap="round"/>'}
+  else{s+='<path d="M138 124 Q152 120 166 124" stroke="'+D+'" stroke-width="3.2" fill="none" stroke-linecap="round"/><path d="M194 124 Q208 120 222 124" stroke="'+D+'" stroke-width="3.2" fill="none" stroke-linecap="round"/>'}
+  if(e.eye==='closed'){s+='<path d="M140 150 Q152 158 164 150" stroke="'+D+'" stroke-width="3.4" fill="none" stroke-linecap="round"/><path d="M196 150 Q208 158 220 150" stroke="'+D+'" stroke-width="3.4" fill="none" stroke-linecap="round"/>'}
+  else if(e.eye==='wide'){s+='<ellipse cx="152" cy="150" rx="12" ry="13" fill="#fff" stroke="'+D+'"/><ellipse cx="208" cy="150" rx="12" ry="13" fill="#fff" stroke="'+D+'"/><circle cx="152" cy="151" r="8" fill="'+D+'"/><circle cx="208" cy="151" r="8" fill="'+D+'"/><circle cx="149" cy="148" r="3" fill="#fff"/><circle cx="205" cy="148" r="3" fill="#fff"/>'}
+  else if(e.eye==='squint'){s+='<ellipse cx="152" cy="150" rx="11" ry="7" fill="#fff"/><ellipse cx="208" cy="150" rx="11" ry="7" fill="#fff"/><circle cx="152" cy="151" r="5.5" fill="'+D+'"/><circle cx="208" cy="151" r="5.5" fill="'+D+'"/>'}
+  else if(e.eye==='tired'){s+='<ellipse cx="152" cy="151" rx="10" ry="7" fill="#fff"/><ellipse cx="208" cy="151" rx="10" ry="7" fill="#fff"/><circle cx="152" cy="152" r="5" fill="'+D+'"/><circle cx="208" cy="152" r="5" fill="'+D+'"/>'}
+  s+='<path d="M178 168 Q174 178 183 183" stroke="#b88060" stroke-width="2.2" fill="none" stroke-linecap="round"/>';
+  if(e.mouth==='pain'){s+='<path d="M162 198 Q180 188 198 198" stroke="#8b3a3a" stroke-width="3.2" fill="none" stroke-linecap="round"/>'}
+  else if(e.mouth==='open'){s+='<ellipse cx="180" cy="198" rx="9" ry="7" fill="#5a1010"/><ellipse cx="180" cy="196" rx="6" ry="3" fill="#8b3a3a"/>'}
+  else if(e.mouth==='sigh'){s+='<path d="M164 198 Q180 208 196 198" stroke="#8b3a3a" stroke-width="2.8" fill="none" stroke-linecap="round"/>'}
+  else{s+='<path d="M164 198 Q180 204 196 198" stroke="#8b3a3a" stroke-width="2.8" fill="none" stroke-linecap="round"/>'}
+  if(L.beard==='short'){s+='<path d="M154 216 Q180 242 206 216 Q204 234 180 236 Q156 234 154 216 Z" fill="'+L.hair+'" opacity=".75"/>'}
+  else if(L.beard==='white'){s+='<path d="M150 214 Q180 256 210 214 Q216 256 180 272 Q144 256 150 214 Z" fill="#ececea" stroke="#a8a8a0"/>'}
+  if(L.sweat){s+='<ellipse cx="128" cy="108" rx="3.6" ry="5.4" fill="#7ec8e3" opacity=".9"/><ellipse cx="234" cy="120" rx="3" ry="4.6" fill="#7ec8e3" opacity=".9"/>'}
+  if(L.wrinkles){s+='<path d="M142 122 Q180 114 218 122" stroke="'+D+'" stroke-width="1.2" fill="none" opacity=".4"/>'}
+  return s;
+}
+function drawBody(L){
+  return '<rect x="161" y="184" width="38" height="42" rx="8" fill="'+L.skin+'" stroke="'+L.shade+'"/>'+
+    '<path d="M100 234 Q180 200 260 234 L280 430 L80 430 Z" fill="'+L.robe+'"/>'+
+    '<path d="M156 216 L180 270 L204 216 Q180 232 156 216 Z" fill="'+L.robeD+'"/>';
+}
+function drawArms(L,pose){
+  var s='';
+  if(pose==='neck'){
+    s+='<path d="M260 234 Q268 200 216 196" stroke="'+L.robe+'" stroke-width="28" fill="none" stroke-linecap="round"/>';
+    s+='<ellipse cx="196" cy="200" rx="15" ry="13" fill="'+L.skin+'" stroke="'+L.shade+'" transform="rotate(-25 196 200)"/>';
+    s+='<path d="M100 234 Q88 296 96 356" stroke="'+L.robe+'" stroke-width="28" fill="none" stroke-linecap="round"/>';
+    s+='<ellipse cx="96" cy="358" rx="14" ry="13" fill="'+L.skin+'" stroke="'+L.shade+'"/>';
+  }else if(pose==='hug'){
+    s+='<path d="M260 234 Q212 278 118 266" stroke="'+L.robe+'" stroke-width="28" fill="none" stroke-linecap="round"/>';
+    s+='<path d="M100 240 Q158 296 246 286" stroke="'+L.robe+'" stroke-width="28" fill="none" stroke-linecap="round"/>';
+    s+='<ellipse cx="118" cy="268" rx="14" ry="12" fill="'+L.skin+'" stroke="'+L.shade+'"/>';
+    s+='<ellipse cx="246" cy="288" rx="14" ry="12" fill="'+L.skin+'" stroke="'+L.shade+'"/>';
+  }else if(pose==='ribs'){
+    s+='<path d="M260 234 Q296 268 262 306" stroke="'+L.robe+'" stroke-width="28" fill="none" stroke-linecap="round"/>';
+    s+='<ellipse cx="256" cy="308" rx="15" ry="13" fill="'+L.skin+'" stroke="'+L.shade+'" transform="rotate(20 256 308)"/>';
+    s+='<path d="M100 234 Q88 296 96 356" stroke="'+L.robe+'" stroke-width="28" fill="none" stroke-linecap="round"/>';
+    s+='<ellipse cx="96" cy="358" rx="14" ry="13" fill="'+L.skin+'" stroke="'+L.shade+'"/>';
+  }else if(pose==='collar'){
+    s+='<path d="M100 240 Q84 200 138 200" stroke="'+L.robe+'" stroke-width="28" fill="none" stroke-linecap="round"/>';
+    s+='<path d="M260 240 Q276 200 222 200" stroke="'+L.robe+'" stroke-width="28" fill="none" stroke-linecap="round"/>';
+    s+='<ellipse cx="144" cy="204" rx="14" ry="12" fill="'+L.skin+'" stroke="'+L.shade+'"/>';
+    s+='<ellipse cx="216" cy="204" rx="14" ry="12" fill="'+L.skin+'" stroke="'+L.shade+'"/>';
+  }else if(pose==='belly'){
+    s+='<path d="M100 234 Q88 300 150 322" stroke="'+L.robe+'" stroke-width="28" fill="none" stroke-linecap="round"/>';
+    s+='<path d="M260 234 Q272 300 210 322" stroke="'+L.robe+'" stroke-width="28" fill="none" stroke-linecap="round"/>';
+    s+='<ellipse cx="156" cy="324" rx="15" ry="13" fill="'+L.skin+'" stroke="'+L.shade+'"/>';
+    s+='<ellipse cx="204" cy="324" rx="15" ry="13" fill="'+L.skin+'" stroke="'+L.shade+'"/>';
+  }
+  return s;
+}
+function drawArmPulse(L){
+  return '<path d="M100 234 Q88 300 96 380" stroke="'+L.robe+'" stroke-width="28" fill="none" stroke-linecap="round"/>'+
+    '<path d="M260 234 Q300 272 296 330 Q292 358 268 372" stroke="'+L.robe+'" stroke-width="28" fill="none" stroke-linecap="round"/>'+
+    '<path d="M292 336 L268 348 Q256 362 258 380 L286 370 Q296 356 292 336 Z" fill="'+L.robeD+'" opacity=".65"/>'+
+    '<ellipse cx="256" cy="382" rx="20" ry="14" fill="'+L.skin+'" stroke="'+L.shade+'"/>'+
+    '<ellipse cx="234" cy="378" rx="10" ry="5" fill="'+L.skin+'" stroke="'+L.shade+'"/>'+
+    '<ellipse cx="232" cy="388" rx="10" ry="5" fill="'+L.skin+'" stroke="'+L.shade+'"/>'+
+    '<ellipse cx="234" cy="398" rx="9" ry="4.5" fill="'+L.skin+'" stroke="'+L.shade+'"/>'+
+    '<ellipse cx="238" cy="408" rx="8" ry="4" fill="'+L.skin+'" stroke="'+L.shade+'"/>';
+}
+function buildScene(p,isPulse,hs,ac){
+  var s='<svg viewBox="0 0 360 500" xmlns="http://www.w3.org/2000/svg"><defs>';
+  s+='<linearGradient id="ts" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#9a5a2a"/><stop offset="100%" stop-color="#3a1a08"/></linearGradient>';
+  s+='<radialGradient id="vg" cx=".5" cy=".4" r=".75"><stop offset="55%" stop-color="rgba(0,0,0,0)"/><stop offset="100%" stop-color="rgba(0,0,0,.42)"/></radialGradient>';
+  s+='</defs>'+drawRoom()+'<rect width="360" height="500" fill="url(#vg)"/>';
+  s+='<g class="pg '+(ac||'')+'">';
+  s+='<ellipse cx="180" cy="430" rx="120" ry="14" fill="rgba(0,0,0,.18)"/>';
+  s+=drawBody(p.look);
+  s+=isPulse?drawArmPulse(p.look):drawArms(p.look,p.pose);
+  s+=drawHead(p,p.expression);
+  s+='</g>'+drawTable();
+  if(isPulse)s+=drawHand();
+  if(hs)for(var i=0;i<hs.length;i++){
+    var h=hs[i];
+    s+='<g class="hs" data-id="'+h.id+'" data-correct="'+(!!h.correct)+'">';
+    s+='<circle class="rg" cx="'+h.cx+'" cy="'+h.cy+'" r="'+h.r+'" fill="none" stroke="rgba(255,215,80,.95)" stroke-width="3"/>';
+    s+='<circle class="rg" cx="'+h.cx+'" cy="'+h.cy+'" r="'+h.r+'" fill="rgba(255,215,80,.15)"/>';
+    s+='<circle class="dt" cx="'+h.cx+'" cy="'+h.cy+'" r="6" fill="rgba(255,215,80,.95)" stroke="#a06000"/>';
+    s+='</g>';
+  }
+  return s+'</svg>';
+}
+var PATIENTS=[
+{name:'张氏',intro:'一位中年男子缩着脖子走进来……',pose:'neck',
+ expression:{brow:'worried',eye:'squint',mouth:'pain'},
+ look:{skin:'#f6d5b4',shade:'#d4a580',hair:'#4a2f1a',hairD:'#2a1a0a',hairStyle:'bun',robe:'#6a7c53',robeD:'#4a5a35',sweat:true,beard:'none'},
+ observe:{hint:'【望诊】点击病人异常的部位',
+  hotspots:[
+   {id:'neck',cx:196,cy:202,r:26,correct:true},
+   {id:'head',cx:180,cy:146,r:44,msg:'头部外观未见明显异常。'},
+   {id:'chest',cx:180,cy:270,r:44,msg:'胸部外观无特殊。'},
+   {id:'belly',cx:180,cy:360,r:40,msg:'腹部平坦，无压痛表现。'},
+   {id:'legs',cx:180,cy:420,r:30,msg:'双腿站立自如，无异常。'}],
+  correctMsg:'你注意到他右手一直扶着脖颈，头项转动困难。'},
+ inquiry:{symptoms:['我……我怕冷，加了衣服还是冷。','身上发热，可是一直在出汗。','风吹过来就觉得难受，特别怕风。','脖子和后脑勺僵硬疼痛，转都转不动。'],doneMsg:'（病人缩着脖子，不停搓手）'},
+ pulse:{text:'脉浮而缓，轻取即得，按之柔软无力。'},
+ diagnose:{options:['太阳中风','太阳伤寒','少阳病'],answer:'太阳中风',formula:'桂枝汤',desc:'解肌发表，调和营卫'}},
+
+{name:'李氏',intro:'一位壮年男子抱着双臂，浑身发抖地走进来……',pose:'hug',
+ expression:{brow:'worried',eye:'closed',mouth:'sigh'},
+ look:{skin:'#e8c8a0',shade:'#b89870',hair:'#2a1a0a',hairD:'#0a0500',hairStyle:'towel',robe:'#5a6a8a',robeD:'#3a4a6a',beard:'short'},
+ observe:{hint:'【望诊】点击病人异常的部位',
+  hotspots:[
+   {id:'chest',cx:180,cy:280,r:50,correct:true},
+   {id:'head',cx:180,cy:146,r:44,msg:'面色苍白，但并非主要症结。'},
+   {id:'belly',cx:180,cy:360,r:40,msg:'腹部无异常。'},
+   {id:'legs',cx:180,cy:420,r:30,msg:'腿部活动正常。'}],
+  correctMsg:'你注意到他紧紧抱着双臂，浑身蜷缩发抖，无汗。'},
+ inquiry:{symptoms:['冷……冷得厉害，盖被子还是冷。','身上发烫，可是一点汗都没有。','全身骨节疼痛，腰也疼得厉害。','有点喘不上气，胸口发闷。'],doneMsg:'（病人蜷缩着，牙齿打颤）'},
+ pulse:{text:'脉浮而紧，如按绳索，搏指有力。'},
+ diagnose:{options:['太阳中风','太阳伤寒','阳明经证'],answer:'太阳伤寒',formula:'麻黄汤',desc:'发汗解表，宣肺平喘'}},
+
+{name:'王氏',intro:'一位妇人皱着眉头，一手按着胁肋走进来……',pose:'ribs',
+ expression:{brow:'worried',eye:'tired',mouth:'sigh'},
+ look:{skin:'#f0d0b0',shade:'#c89878',hair:'#2a1a0a',hairD:'#0a0500',hairStyle:'long',robe:'#b888a0',robeD:'#8a5a70',blush:true,beard:'none'},
+ observe:{hint:'【望诊】点击病人异常的部位',
+  hotspots:[
+   {id:'ribs',cx:258,cy:310,r:30,correct:true},
+   {id:'head',cx:180,cy:146,r:44,msg:'面色少华，但非主要病位。'},
+   {id:'belly',cx:180,cy:360,r:40,msg:'腹部无异常。'},
+   {id:'legs',cx:180,cy:420,r:30,msg:'双腿无异常。'}],
+  correctMsg:'你注意到她一手捂着右侧胁肋，表情郁闷不舒。'},
+ inquiry:{symptoms:['一阵冷一阵热，反反复复的。','胸口和胁肋下面又胀又满。','不想吃东西，心里烦，老想吐。','嘴里发苦，喉咙干，眼睛发花。'],doneMsg:'（病人叹气，按着胁肋）'},
+ pulse:{text:'脉弦，如按琴弦，端直以长。'},
+ diagnose:{options:['少阳病','太阳中风','太阴病'],answer:'少阳病',formula:'小柴胡汤',desc:'和解少阳，疏利枢机'}},
+
+{name:'赵氏',intro:'一位壮汉面红耳赤，扯着衣领大步走进来……',pose:'collar',
+ expression:{brow:'angry',eye:'wide',mouth:'open'},
+ look:{skin:'#f5c0a0',shade:'#c89070',hair:'#1a0a00',hairD:'#000',hairStyle:'topknot',robe:'#8b5a3a',robeD:'#5a3a1a',sweat:true,redFace:true,beard:'short'},
+ observe:{hint:'【望诊】点击病人异常的部位',
+  hotspots:[
+   {id:'face',cx:180,cy:160,r:50,correct:true},
+   {id:'chest',cx:180,cy:280,r:44,msg:'胸部无特殊。'},
+   {id:'belly',cx:180,cy:360,r:40,msg:'腹部无异常。'},
+   {id:'legs',cx:180,cy:420,r:30,msg:'双腿无异常。'}],
+  correctMsg:'你注意到他面红目赤，大汗淋漓，烦躁不安。'},
+ inquiry:{symptoms:['热！热得受不了，像火烧一样。','汗出得像水一样，止都止不住。','口渴得要命，特别想喝凉水。','心里烦躁，坐立不安。'],doneMsg:'（病人不停擦汗，扇风）'},
+ pulse:{text:'脉洪大而数，来势汹涌，如波涛拍岸。'},
+ diagnose:{options:['阳明经证','太阳中风','少阳病'],answer:'阳明经证',formula:'白虎汤',desc:'清热生津，除烦止渴'}},
+
+{name:'孙氏',intro:'一位老人双手捂着肚子，面色萎黄地走进来……',pose:'belly',
+ expression:{brow:'sad',eye:'tired',mouth:'pain'},
+ look:{skin:'#e8d0a0',shade:'#b8a070',hair:'#e8e8e0',hairD:'#a8a8a0',hairStyle:'old',robe:'#7a7a5a',robeD:'#4a4a35',wrinkles:true,beard:'white'},
+ observe:{hint:'【望诊】点击病人异常的部位',
+  hotspots:[
+   {id:'belly',cx:180,cy:330,r:46,correct:true},
+   {id:'head',cx:180,cy:146,r:44,msg:'面色萎黄，但非直接病位。'},
+   {id:'chest',cx:180,cy:270,r:44,msg:'胸部无异常。'},
+   {id:'legs',cx:180,cy:420,r:30,msg:'双腿无异常。'}],
+  correctMsg:'你注意到他双手捂着肚子，面色萎黄无华。'},
+ inquiry:{symptoms:['肚子胀得难受，还老想吐。','吃不下东西，一吃就胀。','拉肚子，越拉越厉害。','肚子时不时地疼，喜欢用手按着。'],doneMsg:'（病人捂着肚子，面露痛苦）'},
+ pulse:{text:'脉缓而弱，沉取无力。'},
+ diagnose:{options:['太阴病','阳明经证','少阳病'],answer:'太阴病',formula:'理中汤',desc:'温中散寒，健脾止泻'}}
+];
+
+var ST={INTRO:0,OBSERVE:1,INQUIRY:2,PULSE:3,DIAG:4};
+var curIdx=0,curP=null,state=ST.INTRO,wrongCount=0,obsWrong=0,syms=[],pulseTxt='',timers=[];
+function $(id){return document.getElementById(id)}
+var sceneEl=$('scene'),bubEl=$('bub'),caseC=$('caseContent'),actsEl=$('acts'),progEl=$('prog'),coinEl=$('coin');
+var moEl=$('mo'),mTEl=$('mT'),mXEl=$('mX'),mBEl=$('mB');
+function clr(){for(var i=0;i<timers.length;i++)clearTimeout(timers[i]);timers=[]}
+function later(f,ms){timers.push(setTimeout(f,ms))}
+function shuf(a){return a.slice().sort(function(){return Math.random()-.5})}
+function showBub(t){bubEl.textContent=t;bubEl.classList.add('on')}
+function hideBub(){bubEl.classList.remove('on')}
+function updCoin(){coinEl.textContent='💰 '+getCoins()}
+function updProg(){progEl.textContent='病人 '+(curIdx+1)+' / '+PATIENTS.length}
+function renderCase(){
+  if(!syms.length&&!pulseTxt){caseC.textContent='尚未开始诊治';return}
+  var h='';
+  if(syms.length){h+='<div><b>症状：</b>';for(var i=0;i<syms.length;i++){if(i)h+='、';h+='<span class="s">'+syms[i]+'</span>'}h+='</div>'}
+  if(pulseTxt)h+='<div><b>脉象：</b><span class="p">'+pulseTxt+'</span></div>';
+  caseC.innerHTML=h;
+}
+function showModal(t,x,bt,cb){mTEl.textContent=t;mXEl.textContent=x;mBEl.textContent=bt;moEl.classList.add('on');mBEl.onclick=function(){moEl.classList.remove('on');if(cb)cb()}}
+function renderScene(o){
+  sceneEl.innerHTML=buildScene(o.p,o.pulse,o.hs,o.ac);
+  var hs=sceneEl.querySelectorAll('.hs');
+  for(var i=0;i<hs.length;i++)(function(el){el.addEventListener('click',function(){onHsClick(el)})})(hs[i]);
+  if(o.pulse){var ph=sceneEl.querySelector('.hs[data-id="pulse"]');if(ph)ph.addEventListener('click',onPulse)}
+}
+function setState(s){state=s;render()}
+function render(){
+  clr();
+  if(state===ST.INTRO)rIntro();
+  else if(state===ST.OBSERVE)rObserve();
+  else if(state===ST.INQUIRY)rInquiry();
+  else if(state===ST.PULSE)rPulse();
+  else if(state===ST.DIAG)rDiag();
+}
+function rIntro(){
+  var ac=curP.pose==='hug'?'shiver':'breathe';
+  renderScene({p:curP,pulse:false,hs:[],ac:ac});
+  actsEl.innerHTML='<div class="tip">👀 '+curP.intro+'</div><button class="btn" id="bOb">开始望诊</button>';
+  $('bOb').onclick=function(){sfx.click();setState(ST.OBSERVE)};
+}
+function rObserve(){
+  obsWrong=0;
+  var ac=curP.pose==='hug'?'shiver':'breathe';
+  renderScene({p:curP,pulse:false,hs:curP.observe.hotspots,ac:ac});
+  actsEl.innerHTML='<div class="tip">'+curP.observe.hint+'</div>';
+}
+function onHsClick(el){
+  var ok=el.dataset.correct==='true';
+  if(ok){
+    sfx.correct();showBub('✅ '+curP.observe.correctMsg);
+    var d=el.querySelector('.dt');if(d)d.setAttribute('fill','rgba(120,220,120,.95)');
+    var rs=el.querySelectorAll('.rg');for(var i=0;i<rs.length;i++){rs[i].setAttribute('stroke','rgba(120,220,120,.95)');rs[i].style.animation='none'}
+    later(function(){setState(ST.INQUIRY)},1600);return;
+  }
+  sfx.wrong();obsWrong++;
+  var h=null;for(var i=0;i<curP.observe.hotspots.length;i++)if(curP.observe.hotspots[i].id===el.dataset.id)h=curP.observe.hotspots[i];
+  var msg=h?h.msg:'这里没有异常。';
+  var rs=el.querySelectorAll('.rg');for(var j=0;j<rs.length;j++)rs[j].setAttribute('stroke','rgba(255,80,80,.95)');
+  later(function(){var r2=el.querySelectorAll('.rg');for(var k=0;k<r2.length;k++)r2[k].setAttribute('stroke','rgba(255,215,80,.95)')},350);
+  if(obsWrong>=3){
+    var all=sceneEl.querySelectorAll('.hs');for(var m=0;m<all.length;m++)all[m].style.pointerEvents='none';
+    showBub('❌ '+msg);
+    actsEl.innerHTML='<div class="tip" style="color:#c62828">❌ 望诊失误三次，病人对你失去信任……</div>';
+    later(function(){showModal('😵 望诊失败','你连续三次没有找准病位，'+curP.name+' 摇头坐了回去。','重新接诊',function(){obsWrong=0;syms=[];pulseTxt='';wrongCount=0;loadP(curIdx)})},800);
+  }else{
+    showBub('❌ '+msg+'（'+obsWrong+'/3）');
+    actsEl.innerHTML='<div class="tip">'+curP.observe.hint+'（错误 '+obsWrong+'/3）</div>';
+    later(hideBub,1200);
+  }
+}
+function rInquiry(){
+  hideBub();
+  renderScene({p:curP,pulse:false,hs:[],ac:'breathe'});
+  actsEl.innerHTML='<div class="tip">💬 病人正在诉说症状……</div>';
+  var ss=curP.inquiry.symptoms;
+  for(var i=0;i<ss.length;i++)(function(idx){later(function(){
+    showBub('「'+ss[idx]+'」');
+    if(syms.indexOf(ss[idx])<0)syms.push(ss[idx]);
+    renderCase();sfx.click();
+    var g=sceneEl.querySelector('.pg');
+    if(g){g.classList.remove('breathe');g.classList.add('shiver');later(function(){g.classList.remove('shiver');g.classList.add('breathe')},420)}
+  },700+idx*700)})(i);
+  later(function(){
+    showBub(curP.inquiry.doneMsg||'（病人沉默）');
+    actsEl.innerHTML='<div class="tip">问诊完毕，接下来请为病人切脉。</div><button class="btn" id="bPul">切脉</button>';
+    $('bPul').onclick=function(){sfx.click();setState(ST.PULSE)};
+  },700+ss.length*700);
+}
+function rPulse(){
+  hideBub();
+  renderScene({p:curP,pulse:true,ac:'breathe',hs:[{id:'pulse',cx:256,cy:382,r:28,correct:true}]});
+  actsEl.innerHTML='<div class="tip">🩺 伸出右手，点击病人手腕为其把脉</div>';
+}
+function onPulse(){
+  sfx.correct();pulseTxt=curP.pulse.text;renderCase();
+  showBub('脉象：'+pulseTxt);
+  var e=sceneEl.querySelector('.hs[data-id="pulse"]');if(e)e.style.display='none';
+  later(function(){
+    actsEl.innerHTML='<div class="tip">四诊已毕，请判断病人的方证。</div><button class="btn" id="bDi">开始辨证</button>';
+    $('bDi').onclick=function(){sfx.click();setState(ST.DIAG)};
+  },1800);
+}
+function rDiag(){
+  hideBub();
+  renderScene({p:curP,pulse:true,hs:[],ac:'breathe'});
+  var opts=shuf(curP.diagnose.options);
+  var h='<div class="tip">🧠 根据四诊所得，判断病人属于哪一证（剩余机会 '+(2-wrongCount)+'）</div>';
+  for(var i=0;i<opts.length;i++)h+='<button class="opt" data-opt="'+opts[i]+'">'+opts[i]+'</button>';
+  actsEl.innerHTML=h;
+  var bs=actsEl.querySelectorAll('.opt');
+  for(var j=0;j<bs.length;j++)(function(b){b.onclick=function(){onDiag(b)}})(bs[j]);
+}
+function onDiag(btn){
+  var picked=btn.dataset.opt,correct=curP.diagnose.answer;
+  if(picked===correct){
+    sfx.win();btn.classList.add('ok');
+    var bs=actsEl.querySelectorAll('.opt');for(var i=0;i<bs.length;i++)bs[i].disabled=true;
+    var rw=10+curIdx*5;setCoins(getCoins()+rw);updCoin();
+    later(function(){
+      showModal('✅ 辨证正确',
+        curP.name+' 患的是「'+correct+'」，当用「'+curP.diagnose.formula+'」。\n'+curP.diagnose.desc+'。\n\n💰 获得 '+rw+' 铜币',
+        '继续',function(){
+          curIdx++;
+          if(curIdx>=PATIENTS.length){
+            showModal('🎉 今日行医完毕','你已诊治完所有病人，共获得铜币 '+getCoins()+'。','返回主页',function(){location.href='index.html'});
+          }else loadP(curIdx);
+        });
+    },900);
+  }else{
+    sfx.lose();wrongCount++;btn.classList.add('no');btn.disabled=true;
+    if(wrongCount>=2){
+      actsEl.innerHTML='<div class="tip" style="color:#c62828">❌ 两次辨证皆错，病人生气地离开了……</div>';
+      var g=sceneEl.querySelector('.pg');if(g)g.style.opacity='.4';
+      later(function(){
+        showModal('😠 辨证失败',curP.name+' 摇头离去了。你决定重新整理思路，请他再来一次。','重新接诊',function(){
+          wrongCount=0;obsWrong=0;syms=[];pulseTxt='';loadP(curIdx);
+        });
+      },500);
+    }else{
+      var tip=actsEl.querySelector('.tip');if(tip)tip.textContent='❌ 错了，「'+picked+'」不对。再想想（剩余机会 1）';
+      var g2=sceneEl.querySelector('.pg');
+      if(g2){g2.classList.remove('breathe');g2.classList.add('shiver');later(function(){g2.classList.remove('shiver');g2.classList.add('breathe')},500)}
+    }
+  }
+}
+function loadP(idx){
+  curP=PATIENTS[idx];
+  wrongCount=0;obsWrong=0;syms=[];pulseTxt='';
+  updProg();renderCase();hideBub();
+  later(function(){setState(ST.INTRO)},200);
+}
+updCoin();loadP(0);
+$('home').onclick=function(){location.href='index.html'};
+</script>
+</body>
+</html>
